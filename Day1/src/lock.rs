@@ -12,21 +12,25 @@ pub(crate) struct Lock {
 }
 
 fn wrapping_add_limit(x: u16, y: u16, limit: u16) -> (u16, u16) {
-    let times = y/limit;
-    let times = if (y%limit + x) > limit { times + 1} else {times};
-    let r = ((x as u32 + y as u32) % limit as u32) as u16;
-    let times = if (r%limit == 0) && times > 0 { times - 1} else { times};
-    return (r, times);
+    let total = x as u32 + y as u32;
+    let new = (total % limit as u32) as u16;
+    let wraps = (total / limit as u32) as u16;
+    (new, wraps)
 }
-
 
 fn wrapping_sub_limit(x: u16, y: u16, limit: u16) -> (u16, u16) {
     let l = limit as u32;
-    let times = y / limit;
-    let r = ((x as u32 + l - (y as u32 % l)) % l) as u16;
-    let times = if y%limit > x { times +1 } else { times };
-    let times = if r%limit == 0 && times > 0 {times -1} else {times};
-    return (r, times);
+
+    // new position
+    let new = ((x as u32 + l - (y as u32 % l)) % l) as u16;
+
+    let wraps = if y < x {
+        0
+    } else {
+        1 + ((y - x ) / limit)
+    } as u16;
+
+    (new, wraps)
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -70,21 +74,23 @@ impl Lock {
 
 
 
-    pub(crate) fn rotate(&mut self, direction: Direction, number_rotations: u16){
-        println!("Rotating number: {:?}", number_rotations);
-        if direction == Direction::Left {
-            let ret  = wrapping_sub_limit(self.active_num as u16, number_rotations, LIMIT);
-            self.active_num = ret.0 as u8;
-            self.null_passed_counter += ret.1 as usize;
-        }else{
-            let ret = wrapping_add_limit(self.active_num as u16, number_rotations, LIMIT);
-            self.active_num = ret.0 as u8;
-            self.null_passed_counter += ret.1 as usize;
-        }
-        if self.active_num == 0{
-            self.null_counter +=1;
+    pub(crate) fn rotate(&mut self, direction: Direction, number_rotations: u16) {
+        let limit = LIMIT;
+
+        let (new, wraps) = match direction {
+            Direction::Left  => wrapping_sub_limit(self.active_num as u16, number_rotations, limit),
+            Direction::Right => wrapping_add_limit(self.active_num as u16, number_rotations, limit),
+        };
+
+        println!("{}", wraps);
+        self.active_num = new as u8;
+        self.null_passed_counter += wraps as usize;
+
+        if self.active_num == 0 {
+            self.null_counter += 1;
         }
     }
+
 
     fn calculate_next_rotation(&mut self)-> bool{
         let active = self.get_next_line();
