@@ -3,35 +3,34 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 
-const LIMIT: u8 = 100;
+const LIMIT: u16 = 100;
 pub(crate) struct Lock {
     active_num: u8,
-    end: u8,
-    pub(crate) null_counter: u8,
+    pub(crate) null_counter: usize,
+    pub(crate) null_passed_counter: usize,
     reader: BufReader<File>,
 }
 
-fn wrapping_add_limit(x: u8, y: u8, limit: u8) -> u8 {
-    let range = limit + 1;
-    (x + y) % range
+fn wrapping_add_limit(x: u16, y: u16, limit: u16) -> (u16, u16) {
+    let times = y/limit;
+    let times = if (y%limit + x) > limit+1 { times + 1} else {times};
+    let r = ((x as u32 + y as u32) % limit as u32) as u16;
+    return (r, times);
 }
 
 
-fn wrapping_sub_limit(x: u8, y: u8, limit: u8) -> u8 {
-    let range = limit + 1;
-    (x + range - y) % range
+fn wrapping_sub_limit(x: u16, y: u16, limit: u16) -> (u16, u16) {
+    let l = limit as u32;
+    let times = y / limit;
+    let times = if y%limit > x+1 { times +1 } else { times };
+    let r = ((x as u32 + l - (y as u32 % l)) % l) as u16;
+    return (r, times);
 }
 
-
-enum Direction {
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Direction {
     Left,
     Right,
-}
-
-impl PartialEq for Direction {
-    fn eq(&self, other: &Self) -> bool {
-        self == other
-    }
 }
 
 impl Direction{
@@ -49,12 +48,12 @@ impl Direction{
 impl Lock {
     pub(crate) fn new(file_name: &str) -> Lock {
         let path = env::current_dir();
-        println!("The current directory is {}", path.expect("REASON").display());
+        path.expect("Could not access current directory");
         let mut file = File::open(file_name).expect("Instantiating failed because:\nFile not found");
         file.seek(SeekFrom::Start(0)).unwrap();
-        Lock{active_num: 0,
-            end: LIMIT,
+        Lock{active_num: 50,
             null_counter: 0,
+            null_passed_counter: 0,
             reader: BufReader::new(file), }
     }
 
@@ -69,11 +68,16 @@ impl Lock {
 
 
 
-    fn rotate(&mut self, direction: Direction, number_rotations: u8){
+    pub(crate) fn rotate(&mut self, direction: Direction, number_rotations: u16){
+        println!("Rotating number: {:?}", number_rotations);
         if direction == Direction::Left {
-            self.active_num = wrapping_sub_limit(self.active_num, number_rotations, self.end);
+            let ret  = wrapping_sub_limit(self.active_num as u16, number_rotations, LIMIT);
+            self.active_num = ret.0 as u8;
+            self.null_passed_counter += ret.1 as usize;
         }else{
-            self.active_num = wrapping_add_limit(self.active_num, number_rotations, self.end);
+            let ret = wrapping_add_limit(self.active_num as u16, number_rotations, LIMIT);
+            self.active_num = ret.0 as u8;
+            self.null_passed_counter += ret.1 as usize;
         }
         if self.active_num == 0{
             self.null_counter +=1;
@@ -90,13 +94,12 @@ impl Lock {
         true
     }
 
-    fn parse_line(line: String) -> (Direction, u8) {
+    fn parse_line(line: String) -> (Direction, u16) {
         if line.len() < 2 {
             panic!("Invalid line format (<2 chars)");
         }
-        println!("{}", line);
         let dir_byte = line.as_bytes()[0];
-        let num_rotation: u8 = line[1..].trim().parse().unwrap();
+        let num_rotation: u16 = line[1..].trim().parse().unwrap();
 
         (Direction::from_byte(dir_byte), num_rotation)
     }
