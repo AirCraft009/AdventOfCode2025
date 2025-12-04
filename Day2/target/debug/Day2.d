@@ -1,1 +1,1 @@
-C:\Users\cocon\Documents\programming\Portfolio\AdventOfCode2025\Day2\target\debug\Day2.exe: C:\Users\cocon\Documents\programming\Portfolio\AdventOfCode2025\Day2\src\main.rs
+C:\Users\cocon\Documents\programming\Portfolio\AdventOfCode2025\Day2\target\debug\Day2.exe: C:\Users\cocon\Documents\programming\Portfolio\AdventOfCode2025\Day2\src\day_2_part_1.rs C:\Users\cocon\Documents\programming\Portfolio\AdventOfCode2025\Day2\src\day_2_part_2.rs C:\Users\cocon\Documents\programming\Portfolio\AdventOfCode2025\Day2\src\main.rs
