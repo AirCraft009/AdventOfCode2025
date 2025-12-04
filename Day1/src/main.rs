@@ -1,5 +1,6 @@
 
 use crate::lock::{Direction, Lock};
+use crate::lock::Direction::{Left, Right};
 
 mod lock;
 

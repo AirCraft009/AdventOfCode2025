@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader, Seek, SeekFrom};
 
 const LIMIT: u16 = 100;
 pub(crate) struct Lock {
-    active_num: u8,
+    pub(crate) active_num: u8,
     pub(crate) null_counter: usize,
     pub(crate) null_passed_counter: usize,
     reader: BufReader<File>,
@@ -13,8 +13,9 @@ pub(crate) struct Lock {
 
 fn wrapping_add_limit(x: u16, y: u16, limit: u16) -> (u16, u16) {
     let times = y/limit;
-    let times = if (y%limit + x) > limit+1 { times + 1} else {times};
+    let times = if (y%limit + x) > limit { times + 1} else {times};
     let r = ((x as u32 + y as u32) % limit as u32) as u16;
+    let times = if (r%limit == 0) && times > 0 { times - 1} else { times};
     return (r, times);
 }
 
@@ -22,8 +23,9 @@ fn wrapping_add_limit(x: u16, y: u16, limit: u16) -> (u16, u16) {
 fn wrapping_sub_limit(x: u16, y: u16, limit: u16) -> (u16, u16) {
     let l = limit as u32;
     let times = y / limit;
-    let times = if y%limit > x+1 { times +1 } else { times };
     let r = ((x as u32 + l - (y as u32 % l)) % l) as u16;
+    let times = if y%limit > x { times +1 } else { times };
+    let times = if r%limit == 0 && times > 0 {times -1} else {times};
     return (r, times);
 }
 
