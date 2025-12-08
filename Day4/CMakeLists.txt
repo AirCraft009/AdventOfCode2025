@@ -4,4 +4,5 @@ project(Day4 C)
 set(CMAKE_C_STANDARD 23)
 
 add_executable(Day4
-        part2.c)
+        part2.c
+        part1.c)

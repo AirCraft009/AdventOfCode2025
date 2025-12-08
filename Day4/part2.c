@@ -2,23 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- *  Plan:
- *
- *  Find out if the paper roll is surrounded by more or less than 4 rolls of paper
- *  simple:
- *      load file into mem, go from pos to pos and add up the values of the chars next to it
- *      then just check if it's below a threshold.
- *      . has ASCII 46 and @ has 64
- *      so if there are only dot's it would be 46*8 = 368
- *      if it's all @ it 64 * 8 = 512
- *      so 368 can be the base val and 512 the max
- *      46 * 4 + 64 * 4 = 440.
- *      If the value is lower than this it should be marked as movable
- *      else it should be immovable
- *
- */
-
 
 // Source - https://stackoverflow.com/a
 // Posted by Superlokkus, modified by community. See post 'Timeline' for change history
@@ -49,7 +32,7 @@ int main(void) {
     fclose(file);
     str[size] = '\0';
 
-    //this makes the currently valid string into an invalid one
+
     // breaking it up into multiple peaces
     replace_char(str, '\n', '\0');
     //we can now get the lenght of a line by calling strlen() aswell
@@ -57,6 +40,7 @@ int main(void) {
     int accessible = 0;
     bool modified = true;
     unsigned char active_replace = '@';
+    // works aslong as the number of iterations isn't bigger than 265 because then it will have wrapped around to the original char
     while (modified) {
         modified = false;
         for (int i = 0; i < size; i++) {
