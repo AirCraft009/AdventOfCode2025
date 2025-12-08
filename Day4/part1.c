@@ -35,7 +35,7 @@ char* replace_char(char* str, char find, char replace){
 
 
 
-int main(void) {
+void part1(void) {
     FILE *file = fopen("input.txt", "r");
     if (file == NULL) {
         printf("Error opening file\n");
